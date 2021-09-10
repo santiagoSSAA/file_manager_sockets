@@ -2,6 +2,9 @@
 
 - SE NECESITA PYTHON3 Y VIRTUALENV INSTALADO EN UBUNTU PARA QUE FUNCIONE
 
+# CREAR VIRTUALENV'
+- virtualenv -python=python3 venv
+
 ## INICIAR ENTORNO VIRTUAL
 
 - source venv/bin/activate
