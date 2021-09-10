@@ -2,6 +2,12 @@
 
 - SE NECESITA PYTHON3 Y VIRTUALENV INSTALADO EN UBUNTU PARA QUE FUNCIONE
 
+## INICIAR ENTORNO VIRTUAL
+
+- source venv/bin/activate
+
+## INSTALAR DEPENDENCIAS
+
 - install requirements: pip3 install -r requirements.txt
 
 ## EJECUTAR SERVIDOR
