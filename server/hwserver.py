@@ -37,17 +37,17 @@ def decrypt_message(encrypted_message):
 def folder_exists(name:str) -> bool:
     return path.isdir("files/{}".format(name))
 
-def upload(**kwargs):
+def upload(content, **kwargs):
     username : str = kwargs.get("username","NoName")
     filename : str = kwargs.get("parameter", "None.none")
-    content : str = kwargs.get("content", "None")
+    #content : str = kwargs.get("content", "None")
     
     if not folder_exists(username):
         os.makedirs("files/{}".format(username))
     
     with open("files/{}/{}".format(username,filename),"wb") as file:
-        file.write(content.encode("latin-1"))
-    return {"message": "uploaded"}
+        file.write(content)
+    return [json.dumps({"message": "uploaded"}).encode('utf-8')]
 
 def sharelink(**kwargs):
     username : str = kwargs.get("username","NoName")
@@ -55,10 +55,10 @@ def sharelink(**kwargs):
     route = "files/{}/{}".format(username,filename)
     
     if not path.isfile(route):
-        return {"message": "no file 404"}
+        return [json.dumps({"message": "no file 404"}).encode('utf-8')]
     
     sharelink = "ElPaseo5.com/{}".format(encrypt_message(route))
-    return {"message": sharelink}
+    return [json.dumps({"message": sharelink}).encode("utf-8")]
     
 def download(**kwargs):
     link : str = kwargs.get("parameter", "None.none")
@@ -69,26 +69,21 @@ def download(**kwargs):
     if not path.isfile(route):
         return {"message": "error file 404"}
     
-    with open(route,"rb") as file:
-        content = file.read().decode("latin-1")
+    with open(route, "rb") as file:
+        bytes_content = file.read()
     
-    return {
-        "message": {
-            "filename": filename,
-            "content": content
-        }
-    }
+    return [filename.encode('utf-8'),bytes_content]
 
 def list_files(**kwargs):
     username : str = kwargs.get("username","NoName")
     route = "files/{}".format(username)
     
     if not path.isdir(route):
-        return {"message": "folder 404"}
+        return [json.dumps({"message": "folder 404"}).encode("utf-8")]
     
-    return {
+    return [json.dumps({
         "message": [f for f in os.listdir(route) if path.isfile(path.join(route, f))]
-    }
+    }).encode("utf-8")]
 
 
 if __name__ == "__main__":
@@ -101,11 +96,14 @@ if __name__ == "__main__":
 
     while True:
         print('Esperando solicitud')
-        message = socket.recv_json()
+        data = socket.recv_multipart()
+        message = data[0]
+        bytes_content = data[1]
+        message = json.loads(message.decode('utf-8'))
         print("Conectado: {}".format(message.get("username", "NoName")))
 
         if message.get("operation","") == "upload":
-            response = upload(**message)
+            response = upload(bytes_content, **message)
         elif message.get("operation","") == "sharelink":
             response = sharelink(**message)
         elif message.get("operation","") == "download":
@@ -114,7 +112,6 @@ if __name__ == "__main__":
             response = list_files(**message)
         else:
             print("error")
-            response = {"message": "error"}
-        
-        
-        socket.send_json(response)
+            response = [json.dumps({"message": "error"}).encode('utf-8')]
+
+        socket.send_multipart(response)
