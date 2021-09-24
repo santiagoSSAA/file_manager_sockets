@@ -1,11 +1,8 @@
 import json
 
-
 from cryptography.fernet import Fernet
 from os import getcwd
 
-# listen = is_sending_message
-# file_write = is_file_beginning
 
 def add_file(path: str,  bytes_content: bytes, db: list, **kwargs) -> list:
     is_file_beginning : str = kwargs.get("is_file_beginning")
@@ -38,7 +35,7 @@ def add_user(username: str, db: list) -> None:
     print("{} agregado".format(username))
 
 def encrypt_message(message):
-    key = load_key()
+    key = open("secret.key", "rb").read()
     encoded_message = message.encode()
     f = Fernet(key)
     encrypted_message = f.encrypt(encoded_message)

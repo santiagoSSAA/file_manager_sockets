@@ -48,8 +48,8 @@ def sharelink(**message) -> list:
     if not file_exists(username, DB, filename):
         return [{"message": "message", "response": "file 404"}, b""]
 
-    sharelink = encrypt_message(get_path(file_hash, file_name))
-    return [json.dumps({"message": sharelink}).encode("utf-8")]
+    sharelink = encrypt_message(get_path(file_hash, filename))
+    return [{"message": "message", "response": sharelink}]
 
 def download(**message) -> list:
     file_chunks : int = message.get("file_chunks")
