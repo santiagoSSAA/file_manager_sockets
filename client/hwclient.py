@@ -25,7 +25,7 @@ def create_request(*args) -> SocketRequest:
         request.set_filename(args[3])
     elif request.operation == "download":
         request.set_share_link(args[3])
-    else:
+    elif request.operation != "list":
         raise Exception("operation {} not allowed".format(request.operation))
     return request
 

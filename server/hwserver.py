@@ -110,7 +110,7 @@ def list_files(**message) -> list:
     for user in DB:
         if user["username"] == username:
             files = user["file"].values()
-            return [{'message': 'message', 'response': files}, b'']
+            return [{'message': 'message', 'response': list(files)}, b'']
 
     return [{'message': 'message', 'response': 'user 404'}, b'']
 
