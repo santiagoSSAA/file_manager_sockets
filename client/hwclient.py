@@ -6,7 +6,7 @@ import zmq
 from socket_class import SocketRequest
 
 
-CHUNK_SIZE = 1024*1024*5
+CHUNK_SIZE = 1024*1024*50
 ROUTE = "tcp://localhost:8001"
 
 
@@ -35,40 +35,49 @@ def main(socket, *args) -> None:
 
     if request.operation == "upload":
         request.is_sending_message = True
+        file = open(request.filename, "rb")
+        chunk = file.read(CHUNK_SIZE)
+        request.is_file_beginning = True
+        request.set_file_hash(get_file_hash(chunk))
+        request.set_multipart_message(
+            request=request.get_upload_message(),
+            content=b""
+        )
+        socket.send_multipart(request.multipart_message)
+        request.is_file_beginning = False
 
-        with open(request.filename, "rb") as file:
-            chunk = file.read(CHUNK_SIZE)
-            request.is_file_beginning = True
-            request.set_file_hash(get_file_hash(chunk))
-            request.set_multipart_message(
-                request=request.get_upload_message(),
-                content=b""
+        file_size = os.stat(request.filename).st_size
+        file_chunks = file_size / (1024 * 1024 * 50)
+        if file_chunks != int(file_chunks):
+            file_chunks = int(file_chunks) + 1
+
+        chunk_number = 1
+        while bool(chunk):
+            if file_chunks > 0:
+                print(str(int((chunk_number/file_chunks)*100))+'%')
+            server_response : dict = json.loads(
+                socket.recv_multipart()[0]
             )
-            socket.send_multipart(request.multipart_message)
-            request.is_file_beginning = False
 
-            chunk_number = 1
-            while chunk:
+            if server_response.get("message") == "ok":
+                request.set_multipart_message(
+                    request=request.get_upload_message(),
+                    content=chunk
+                )
+                socket.send_multipart(request.multipart_message)
                 
-                server_response : dict = json.loads(socket.recv_multipart()[0])
-
-                if server_response.get("message") == "ok":
-                    request.set_multipart_message(
-                        request=request.get_upload_message(),
-                        content=chunk
-                    )
-                    socket.send_multipart(request.multipart_message)
-                chunk = file.read(CHUNK_SIZE)
+            chunk_number += 1
+            chunk = file.read(CHUNK_SIZE)
 
         _ = socket.recv_multipart()
-
+        request.is_sending_message = False
     else:
         request.set_multipart_message(content=b"")
         if request.operation == "download":
             request.set_file_chunks(0)
 
     request.set_multipart_message(
-        request=request.get_minimal_data(),
+        request=request.get_upload_message(),
         content=b""
     )
     socket.send_multipart(request.multipart_message)

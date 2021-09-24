@@ -31,7 +31,7 @@ class SocketRequest():
     def set_multipart_message(self, content:bytes = None, request: dict = {}):
         if request:
             self.multipart_message[0] = json.dumps(request).encode("utf-8")
-        elif content:
+        if content:
             self.multipart_message[1] = content
 
     def set_share_link(self, sharelink: str) -> None:
