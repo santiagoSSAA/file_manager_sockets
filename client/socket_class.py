@@ -4,14 +4,15 @@ class SocketRequest():
     """SocketRequest class"""
 
     def __init__(self, **kwargs):
+        self.operation : str = kwargs.get("operation")
+
         self.is_file_beginning : bool = False
         self.is_sending_message : bool = False
         self.filename : str = None
         self.file_content : bytes = None
         self.file_chunks : int = None
         self.file_hash : str = None
-        self.multipart_message : list = [None, None]
-        self.operation : str = kwargs.get("operation")
+        self.multipart_message : list = [{}, b""]
         self.sharelink : str = None
         self.username : str = kwargs.get("username")
 
@@ -27,7 +28,7 @@ class SocketRequest():
     def set_file_hash(self, file_hash: str) -> None:
         self.file_hash = file_hash    
 
-    def set_multipart_message(request: dict={}, content:bytes = None):
+    def set_multipart_message(self, content:bytes = None, request: dict = {}):
         if request:
             self.multipart_message[0] = json.dumps(request).encode("utf-8")
         elif content:
@@ -46,5 +47,18 @@ class SocketRequest():
             "username": self.username
         }
 
+    def get_minimal_data(self) -> dict:
+        return {
+            "file_chunks": self.file_chunks,
+            "sharelink": self.sharelink,
+            "operation": self.operation,
+            "username": self.username
+        }
+
     def get_download_message(self) -> dict:
-        return {}
+        return {
+            "file_chunks": self.file_chunks,
+            "sharelink": self.sharelink,
+            "operation": self.operation,
+            "username": self.username
+        }

@@ -3,25 +3,27 @@ import hashlib
 import sys, os
 import zmq
 
-from .socket_class import SocketRequest
+from socket_class import SocketRequest
 
 
-CHUNK_SIZE = 1024*1024*50
+CHUNK_SIZE = 1024*1024*5
 ROUTE = "tcp://localhost:8001"
 
 
 def get_file_hash(file):
+    sha1 = hashlib.sha1()
     sha1.update(file)
     return sha1.hexdigest()
+
 
 def create_request(*args) -> SocketRequest:
     request = SocketRequest(
         username=args[1],
         operation=args[2]
     )
-    if request.operation == "upload":
+    if request.operation in ["upload", "sharelink"]:
         request.set_filename(args[3])
-    elif request.operation in ["download", "sharelink"] :
+    elif request.operation == "download":
         request.set_share_link(args[3])
     else:
         raise Exception("operation {} not allowed".format(request.operation))
@@ -37,7 +39,7 @@ def main(socket, *args) -> None:
         with open(request.filename, "rb") as file:
             chunk = file.read(CHUNK_SIZE)
             request.is_file_beginning = True
-            request.set_file_hash(get_file_hash(file))
+            request.set_file_hash(get_file_hash(chunk))
             request.set_multipart_message(
                 request=request.get_upload_message(),
                 content=b""
@@ -45,7 +47,9 @@ def main(socket, *args) -> None:
             socket.send_multipart(request.multipart_message)
             request.is_file_beginning = False
 
+            chunk_number = 1
             while chunk:
+                
                 server_response : dict = json.loads(socket.recv_multipart()[0])
 
                 if server_response.get("message") == "ok":
@@ -63,7 +67,10 @@ def main(socket, *args) -> None:
         if request.operation == "download":
             request.set_file_chunks(0)
 
-    request.set_multipart_message(content=b"")
+    request.set_multipart_message(
+        request=request.get_minimal_data(),
+        content=b""
+    )
     socket.send_multipart(request.multipart_message)
     server_response : dict = json.loads(socket.recv_multipart()[0])
 

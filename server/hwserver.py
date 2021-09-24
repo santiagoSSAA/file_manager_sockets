@@ -1,90 +1,108 @@
-import zmq
+# import zmq
+# import json
+# import re
+# import os.path as path
+# import os
+# from cryptography.fernet import Fernet
+
 import json
-import re
-import os.path as path
 import os
-from cryptography.fernet import Fernet
+import os.path as path
+import zmq
+
+from helper import (
+    add_file,
+    add_user,
+    decrypt_message,
+    encrypt_message,
+    file_exists,
+    generate_key,
+    get_file_content,
+    get_file_name,
+    get_path,
+    user_exists
+)
+
 
 ROUTE = "tcp://*:8001"
+DB = json.load(open('db.json','r'))
 
-def generate_key():
-    """
-    Generates a key and save it into a file
-    """
-    key = Fernet.generate_key()
-    with open("secret.key", "wb") as key_file:
-        key_file.write(key)
 
-def load_key():
-    """
-    Load the previously generated key
-    """
-    return open("secret.key", "rb").read()
+def upload(bytes_content: bytes, **message) -> list:
+    filename : str = message.get("filename", "NoName")
+    file_hash : str = message.get("file_hash", "123123")
+    username : str = message.get("username", "NoName")
 
-def encrypt_message(message):
-    key = load_key()
-    encoded_message = message.encode()
-    f = Fernet(key)
-    encrypted_message = f.encrypt(encoded_message)
-    return encrypted_message.decode()
+    if not user_exists(username, DB):
+        add_user(username, DB)
 
-def decrypt_message(encrypted_message):
-    key = load_key()
-    f = Fernet(key)
-    decrypted_message = f.decrypt(encrypted_message)
-    return decrypted_message.decode()
+    response : list = add_file(get_path(file_hash, filename), bytes_content, DB, **message)
+    return response
 
-def folder_exists(name:str) -> bool:
-    return path.isdir("files/{}".format(name))
+def sharelink(**message) -> list:
+    filename : str = message.get("filename", "NoName")
+    file_hash : str = message.get("file_hash", "123123")
+    username : str = message.get("username","NoName")
 
-def upload(content, **kwargs):
-    username : str = kwargs.get("username","NoName")
-    filename : str = kwargs.get("parameter", "None.none")
-    #content : str = kwargs.get("content", "None")
-    
-    if not folder_exists(username):
-        os.makedirs("files/{}".format(username))
-    
-    with open("files/{}/{}".format(username,filename),"wb") as file:
-        file.write(content)
-    return [json.dumps({"message": "uploaded"}).encode('utf-8')]
+    if not user_exists(username, DB):
+        return [{"message": "message", "response": "user 404"}, b""]
 
-def sharelink(**kwargs):
-    username : str = kwargs.get("username","NoName")
-    filename : str = kwargs.get("parameter", "None.none")
-    route = "files/{}/{}".format(username,filename)
-    
-    if not path.isfile(route):
-        return [json.dumps({"message": "no file 404"}).encode('utf-8')]
-    
-    sharelink = "ElPaseo5.com/{}".format(encrypt_message(route))
+    if not file_exists(username, DB, filename):
+        return [{"message": "message", "response": "file 404"}, b""]
+
+    sharelink = encrypt_message(get_path(file_hash, file_name))
     return [json.dumps({"message": sharelink}).encode("utf-8")]
-    
-def download(**kwargs):
-    link : str = kwargs.get("parameter", "None.none")
-    code = link.split("/")[1].encode()
-    route = decrypt_message(code)
-    filename = route.split("/")[2]
-    
-    if not path.isfile(route):
-        return {"message": "error file 404"}
-    
-    with open(route, "rb") as file:
-        bytes_content = file.read()
-    
-    return [filename.encode('utf-8'),bytes_content]
 
-def list_files(**kwargs):
-    username : str = kwargs.get("username","NoName")
-    route = "files/{}".format(username)
+def download(**message) -> list:
+    file_chunks : int = message.get("file_chunks")
+    sharelink : str = message.get("sharelink")
+    username : str = message.get("username","NoName")
     
-    if not path.isdir(route):
-        return [json.dumps({"message": "folder 404"}).encode("utf-8")]
-    
-    return [json.dumps({
-        "message": [f for f in os.listdir(route) if path.isfile(path.join(route, f))]
-    }).encode("utf-8")]
+    if not user_exists(username, DB):
+        return [{"message": "message", "response": "user 404"}, b""]
 
+    message["filename"] = get_file_name(username, sharelink, DB)
+    if not message["filename"]:
+        return [{"message": "message", "response": "file 404"}, b""]
+
+    path : str = decrypt_message(sharelink)
+    if file_chunks:
+        file_content = get_file_content(DB, path, **message)
+        return [{
+            "message": "download",
+            "file_chunks": file_chunks,
+            "filename": message["filename"]
+        }, file_content]
+    else:
+        file_size = os.stat(path).st_size
+        file_chunks = int(file_size) / 10242 * 1024 * 50
+
+        if file_chunks != int(file_chunks):
+            file_chunks = int(file_chunks) + 1
+
+    if not file_chunks:
+        message["file_chunks"] = 0
+        file_content = get_file_content(DB, path, **message)
+        return [{
+            "message": "download",
+            "file_chunks": file_chunks,
+            "filename": message["filename"]
+        }, file_content]
+    
+    return [{
+            "message": "download",
+            "file_chunks": file_chunks,
+            "filename": message["filename"]
+        }, b""]
+
+def list_files(**message) -> list:
+    username : str = message.get("username")
+    for user in DB:
+        if user["username"] == username:
+            files = user["file"].values()
+            return [{'message': 'message', 'response': files}, b'']
+
+    return [{'message': 'message', 'response': 'user 404'}, b'']
 
 if __name__ == "__main__":
     if not path.isfile("secret.key"):
@@ -96,22 +114,25 @@ if __name__ == "__main__":
 
     while True:
         print('Esperando solicitud')
-        data = socket.recv_multipart()
-        message = data[0]
-        bytes_content = data[1]
-        message = json.loads(message.decode('utf-8'))
+        message, bytes_content = socket.recv_multipart()
+        message = json.loads(message.decode("utf-8"))
         print("Conectado: {}".format(message.get("username", "NoName")))
 
         if message.get("operation","") == "upload":
-            response = upload(bytes_content, **message)
+            response : list = upload(bytes_content, **message)
         elif message.get("operation","") == "sharelink":
-            response = sharelink(**message)
+            response : list = sharelink(**message)
         elif message.get("operation","") == "download":
-            response = download(**message)
+            response : list = download(**message)
         elif message.get("operation","") == "list":
-            response = list_files(**message)
+            response : list = list_files(**message)
         else:
             print("error")
-            response = [json.dumps({"message": "error"}).encode('utf-8')]
+            response : list = [{"message": "error"}]
 
+        if len(response) < 2:
+            bytes_content = b""
+            response.append(bytes_content)
+
+        response[0] = json.dumps(response[0]).encode('utf-8')
         socket.send_multipart(response)
