@@ -1,22 +1,49 @@
-# file_manager_sockets
+# INTEGRANTES
 
-- SE NECESITA PYTHON3 Y VIRTUALENV INSTALADO EN UBUNTU PARA QUE FUNCIONE
+- CESAR ALEJANDRO PIMIENTO HERNANDEZ
+- SANTIAGO SANCHEZ PULGARIN
 
-# CREAR VIRTUALENV'
+# REQUERIMIENTOS PREVIOS
+
+- virtualenv
+- ubuntu 18.04+
+- python3.8+
+- pip3
+
+# INSTALACIÓN Y EJECUCIÓN
+
+## CREAR ENTORNO VIRTUAL 
+
 - virtualenv -python=python3 venv
-
-## INICIAR ENTORNO VIRTUAL
-
-- source venv/bin/activate
 
 ## INSTALAR DEPENDENCIAS
 
-- install requirements: pip3 install -r requirements.txt
+- pip3 install -r requirements.txt
 
 ## EJECUTAR SERVIDOR
 
-- python3 server/hwserver.py
+- cd server/
+
+- python3 hwserver.py
+
 
 ## EJECUTAR CLIENTE
 
-- python3 client/hwclient.py
+- cd client/
+
+### EJECUTAR UPLOAD
+
+- python3 hwclient.py usuario upload archivo
+
+### EJECUTAR SHARELINK
+
+- python3 hwclient.py usuario sharelink archivo
+
+### EJECUTAR DOWNLOAD
+
+- python3 hwclient.py usuario download link
+
+### EJECUTAR LIST
+
+- python3 hwclient.py usuario list
+
