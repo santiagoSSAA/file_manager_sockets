@@ -1,1 +1,6 @@
+cffi==1.14.6
+cryptography==3.4.8
 libxml2-python==2.9.12
+pycparser==2.20
+pyzmq==22.3.0
+zmq==0.0.0
