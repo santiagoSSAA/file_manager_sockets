@@ -81,7 +81,8 @@ def main(socket, *args) -> None:
         content=b""
     )
     socket.send_multipart(request.multipart_message)
-    server_response : dict = json.loads(socket.recv_multipart()[0])
+    socket_response = socket.recv_multipart()
+    server_response : dict = json.loads(socket_response[0])
 
     if server_response.get("message") in ["message", "list"]:
         print(server_response.get("response"))
@@ -90,11 +91,13 @@ def main(socket, *args) -> None:
             os.getcwd(),
             server_response.get("filename")
         )
-        with open(path,"wb") as file:
-            file.write(b"")
-
-        chunks = request.file_chunks
-        for i in range(chunks):
+        open(path,"wb").write(b"")
+        
+        chunks = server_response.get("file_chunks")
+        for i in range(0, chunks+1):
+            if chunks >= 0:
+                print(str(int((i/chunks)*100))+'%')
+            
             request.set_file_chunks(i)
             request.set_multipart_message(
                 request=request.get_download_message(),

@@ -42,24 +42,17 @@ class SocketRequest():
             "is_file_beginning": self.is_file_beginning,
             "is_sending_message": self.is_sending_message,
             "filename": self.filename,
+            "file_chunks": self.file_chunks,
             "file_hash": self.file_hash,
             "operation": self.operation,
             "sharelink": self.sharelink,
             "username": self.username
         }
-
-    def get_minimal_data(self) -> dict:
-        return {
-            "file_chunks": self.file_chunks,
-            "sharelink": self.sharelink,
-            "operation": self.operation,
-            "username": self.username
-        }
-
+        
     def get_download_message(self) -> dict:
         return {
             "file_chunks": self.file_chunks,
-            "sharelink": self.sharelink,
             "operation": self.operation,
+            "sharelink": self.sharelink,
             "username": self.username
         }

@@ -77,13 +77,6 @@ def get_file_content(db: list, path: str, **kwargs):
 
     return None
 
-def get_file_name(username: str, file_hash: str, db: list) -> str:
-    for user in db:
-        if user.get('username') == username:
-            if file_hash in user["file"].keys():
-                return user.file.get(file_hash)
-    return ""
-
 def get_path(file_hash: str, filename: str):
     file_extension = filename.split(".")[1]
     return "{}/files/{}.{}".format(getcwd(), file_hash, file_extension)

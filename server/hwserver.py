@@ -11,7 +11,6 @@ from helper import (
     file_exists,
     generate_key,
     get_file_content,
-    get_file_name,
     get_path,
     user_exists
 )
@@ -61,23 +60,26 @@ def download(**message) -> list:
     file_chunks : int = message.get("file_chunks")
     sharelink : str = message.get("sharelink")
     username : str = message.get("username","NoName")
+    path : str = decrypt_message(sharelink.encode())
+    file_hash : str = path.split("/")[-1].split(".")[0]
+    filename : str = None
 
-    print(decrypt_message(sharelink.encode()))
+    for user in DB:
+        for hash,name in user.get("file",{}).items():
+            if hash == file_hash:
+                filename = name
+                break
     
     if not user_exists(username, DB):
         return [{"message": "message", "response": "user 404"}, b""]
 
-    message["filename"] = get_file_name(username, sharelink, DB)
-    if not message["filename"]:
-        return [{"message": "message", "response": "file 404"}, b""]
-
-    path : str = decrypt_message(sharelink)
     if file_chunks:
+        message["filename"] = filename
         file_content = get_file_content(DB, path, **message)
         return [{
             "message": "download",
             "file_chunks": file_chunks,
-            "filename": message["filename"]
+            "filename": filename
         }, file_content]
     else:
         file_size = os.stat(path).st_size
@@ -86,19 +88,21 @@ def download(**message) -> list:
         if file_chunks != int(file_chunks):
             file_chunks = int(file_chunks) + 1
 
+
     if not file_chunks:
         message["file_chunks"] = 0
+        message["filename"] = filename
         file_content = get_file_content(DB, path, **message)
         return [{
             "message": "download",
             "file_chunks": file_chunks,
-            "filename": message["filename"]
+            "filename": filename
         }, file_content]
     
     return [{
             "message": "download",
             "file_chunks": file_chunks,
-            "filename": message["filename"]
+            "filename": filename
         }, b""]
 
 def list_files(**message) -> list:
