@@ -44,6 +44,7 @@ class SocketRequest():
             "filename": self.filename,
             "file_hash": self.file_hash,
             "operation": self.operation,
+            "sharelink": self.sharelink,
             "username": self.username
         }
 

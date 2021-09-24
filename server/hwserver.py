@@ -39,8 +39,14 @@ def upload(bytes_content: bytes, **message) -> list:
 
 def sharelink(**message) -> list:
     filename : str = message.get("filename", "NoName")
-    file_hash : str = message.get("file_hash", "123123")
+    file_hash : str = None
     username : str = message.get("username","NoName")
+    
+    for user in DB:
+        for hash,name in user.get("file",{}).items():
+            if name == filename:
+                file_hash = hash
+                break
 
     if not user_exists(username, DB):
         return [{"message": "message", "response": "user 404"}, b""]
@@ -55,6 +61,8 @@ def download(**message) -> list:
     file_chunks : int = message.get("file_chunks")
     sharelink : str = message.get("sharelink")
     username : str = message.get("username","NoName")
+
+    print(decrypt_message(sharelink.encode()))
     
     if not user_exists(username, DB):
         return [{"message": "message", "response": "user 404"}, b""]
