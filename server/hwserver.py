@@ -122,9 +122,8 @@ if __name__ == "__main__":
     socket = context.socket(zmq.REP)
     socket.bind(ROUTE)
 
-    count = 1
     while True:
-        print('Esperando solicitud {}'.format(count))
+        print('Esperando solicitud')
         message, bytes_content = socket.recv_multipart()
         message = json.loads(message.decode("utf-8"))
         
@@ -146,4 +145,3 @@ if __name__ == "__main__":
 
         response[0] = json.dumps(response[0]).encode('utf-8')
         socket.send_multipart(response)
-        count += 1
