@@ -33,17 +33,17 @@
 
 ### EJECUTAR UPLOAD
 
-- python3 hwclient.py usuario upload archivo
+- python3 hwclient.py <usuario> upload <archivo>
 
 ### EJECUTAR SHARELINK
 
-- python3 hwclient.py usuario sharelink archivo
+- python3 hwclient.py <usuario> sharelink <archivo>
 
 ### EJECUTAR DOWNLOAD
 
-- python3 hwclient.py usuario download link
+- python3 hwclient.py <usuario> download <list>
 
 ### EJECUTAR LIST
 
-- python3 hwclient.py usuario list
+- python3 hwclient.py <usuario> list
 
