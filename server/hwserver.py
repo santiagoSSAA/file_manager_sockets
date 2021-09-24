@@ -1,10 +1,3 @@
-# import zmq
-# import json
-# import re
-# import os.path as path
-# import os
-# from cryptography.fernet import Fernet
-
 import json
 import os
 import os.path as path
@@ -36,7 +29,12 @@ def upload(bytes_content: bytes, **message) -> list:
     if not user_exists(username, DB):
         add_user(username, DB)
 
-    response : list = add_file(get_path(file_hash, filename), bytes_content, DB, **message)
+    response : list = add_file(
+        get_path(file_hash, filename),
+        bytes_content,
+        DB,
+        **message
+    )
     return response
 
 def sharelink(**message) -> list:
@@ -75,7 +73,7 @@ def download(**message) -> list:
         }, file_content]
     else:
         file_size = os.stat(path).st_size
-        file_chunks = int(file_size) / 10242 * 1024 * 50
+        file_chunks = file_size / (1024 * 1024 * 50)
 
         if file_chunks != int(file_chunks):
             file_chunks = int(file_chunks) + 1
@@ -112,12 +110,12 @@ if __name__ == "__main__":
     socket = context.socket(zmq.REP)
     socket.bind(ROUTE)
 
+    count = 1
     while True:
-        print('Esperando solicitud')
+        print('Esperando solicitud {}'.format(count))
         message, bytes_content = socket.recv_multipart()
         message = json.loads(message.decode("utf-8"))
-        print("Conectado: {}".format(message.get("username", "NoName")))
-
+        
         if message.get("operation","") == "upload":
             response : list = upload(bytes_content, **message)
         elif message.get("operation","") == "sharelink":
@@ -136,3 +134,4 @@ if __name__ == "__main__":
 
         response[0] = json.dumps(response[0]).encode('utf-8')
         socket.send_multipart(response)
+        count += 1

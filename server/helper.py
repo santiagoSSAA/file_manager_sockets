@@ -16,12 +16,11 @@ def add_file(path: str,  bytes_content: bytes, db: list, **kwargs) -> list:
 
     if is_sending_message:
         if is_file_beginning:
-            with open(path, "wb+") as file:
-                file.write(bytes_content)
-                add_file_json(username, filename, file_hash, db)
+            open(path, "wb+").write(bytes_content)
+            add_file_json(username, filename, file_hash, db)
             return [{"message": "ok"}]
-        with open(path, "ab") as file:
-            file.write(bytes_content)
+        
+        open(path, "ab").write(bytes_content)
         return [{"message": "ok"}]
     return [{"message": "message", "response": "archivo subido"}]
 
@@ -29,6 +28,8 @@ def add_file_json(username: str, filename: str, file_hash: str, db: list):
     for user in db:
         if user["username"] == username and not filename in user["file"]:
             user['file'][file_hash] = filename
+        with open("db.json","w") as file:
+            json.dump(db, file)
 
 def add_user(username: str, db: list) -> None:
     db.append({"username": username, "file": dict()})
@@ -75,7 +76,7 @@ def get_file_content(db: list, path: str, **kwargs):
             if not file_chunks:
                 return open(path, "rb").read()
             else:
-                return open(path, "rb").read(1024*1024*5)
+                return open(path, "rb").read(1024*1024*50)
 
     return None
 
@@ -87,7 +88,6 @@ def get_file_name(username: str, file_hash: str, db: list) -> str:
     return ""
 
 def get_path(file_hash: str, filename: str):
-    print(filename)
     file_extension = filename.split(".")[1]
     return "{}/files/{}.{}".format(getcwd(), file_hash, file_extension)
 
